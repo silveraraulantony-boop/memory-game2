@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#9333EA">
+    <meta name="description" content="Juego de memoria para aprender inglés">
+    <title>Memory Game - English Learning</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoiTWVtb3J5IEdhbWUgLSBFbmdsaXNoIExlYXJuaW5nIiwic2hvcnRfbmFtZSI6Ik1lbW9yeSBHYW1lIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmZmZmZmYiLCJ0aGVtZV9jb2xvciI6IiM5MzMzRUEiLCJpY29ucyI6W3sic3JjIjoiaWNvbi5wbmciLCJzaXplcyI6IjE5MngxOTIiLCJ0eXBlIjoiaW1hZ2UvcG5nIn1dfQ==">
+    
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Iconos como componentes SVG
+        const Sparkles = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+            </svg>
+        );
+
+        const Trophy = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+            </svg>
+        );
+
+        const Flame = ({ className }) => (
+            <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2c1.344 0 3.288 1.02 4.293 2.293C17.298 5.367 18 7.005 18 9c0 2.995-2.005 5-5 5s-5-2.005-5-5c0-.898.265-1.731.74-2.515C9.765 5.015 10.875 4 12 2zm0 14c-3.314 0-6-2.686-6-6 0-1.223.372-2.388 1.05-3.382C6.373 8.395 6 10.145 6 12c0 3.314 2.686 6 6 6s6-2.686 6-6c0-1.855-.373-3.605-1.05-5.382C17.628 7.612 18 8.777 18 10c0 3.314-2.686 6-6 6z"/>
+            </svg>
+        );
+
+        const Star = ({ className }) => (
+            <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+        );
+
+        const ArrowLeft = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+            </svg>
+        );
+
+        const Users = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+            </svg>
+        );
+
+        const Lock = ({ className }) => (
+            <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+            </svg>
+        );
+
+        // Datos de los niveles
+        const LEVEL_DATA = {
+          1: {
+            name: "Animals & Colors",
+            requiredScore: 0,
+            cards: [
+              { id: 1, word: "Dog", pronunciation: "/dog/", image: "🐕", pair: 1 },
+              { id: 2, word: "Dog", pronunciation: "/dog/", image: "🐕", pair: 1 },
+              { id: 3, word: "Cat", pronunciation: "/cát/", image: "🐈", pair: 2 },
+              { id: 4, word: "Cat", pronunciation: "/cát/", image: "🐈", pair: 2 },
+              { id: 5, word: "Bird", pronunciation: "/berd/", image: "🐦", pair: 3 },
+              { id: 6, word: "Bird", pronunciation: "/berd/", image: "🐦", pair: 3 },
+              { id: 7, word: "Fish", pronunciation: "/fish/", image: "🐠", pair: 4 },
+              { id: 8, word: "Fish", pronunciation: "/fish/", image: "🐠", pair: 4 },
+              { id: 9, word: "Red", pronunciation: "/red/", image: "🔴", pair: 5 },
+              { id: 10, word: "Red", pronunciation: "/red/", image: "🔴", pair: 5 },
+              { id: 11, word: "Blue", pronunciation: "/blu/", image: "🔵", pair: 6 },
+              { id: 12, word: "Blue", pronunciation: "/blu/", image: "🔵", pair: 6 },
+              { id: 13, word: "Green", pronunciation: "/ɡrin/", image: "🟢", pair: 7 },
+              { id: 14, word: "Green", pronunciation: "/ɡrin/", image: "🟢", pair: 7 },
+              { id: 15, word: "Yellow", pronunciation: "/iélou/", image: "🟡", pair: 8 },
+              { id: 16, word: "Yellow", pronunciation: "/iélou/", image: "🟡", pair: 8 },
+              { id: 17, word: "Elephant", pronunciation: "/élefant/", image: "🐘", pair: 9 },
+              { id: 18, word: "Elephant", pronunciation: "/élefant/", image: "🐘", pair: 9 },
+              { id: 19, word: "Lion", pronunciation: "/láion/", image: "🦁", pair: 10 },
+              { id: 20, word: "Lion", pronunciation: "/láion/", image: "🦁", pair: 10 },
+              { id: 21, word: "Rabbit", pronunciation: "/rábit/", image: "🐰", pair: 11 },
+              { id: 22, word: "Rabbit", pronunciation: "/rábit/", image: "🐰", pair: 11 },
+              { id: 23, word: "Monkey", pronunciation: "/mónki/", image: "🐵", pair: 12 },
+              { id: 24, word: "Monkey", pronunciation: "/mónki/", image: "🐵", pair: 12 },
+              { id: 25, word: "Frog", pronunciation: "/frag/", image: "🐸", pair: 13 },
+              { id: 26, word: "Frog", pronunciation: "/frag/", image: "🐸", pair: 13 },
+              { id: 27, word: "Butterfly", pronunciation: "/báderflai/", image: "🦋", pair: 14 },
+              { id: 28, word: "Butterfly", pronunciation: "/báderflai/", image: "🦋", pair: 14 },
+              { id: 29, word: "Bee", pronunciation: "/bi/", image: "🐝", pair: 15 },
+              { id: 30, word: "Bee", pronunciation: "/bi/", image: "🐝", pair: 15 },
+              { id: 31, word: "Turtle", pronunciation: "/torthis/", image: "🐢", pair: 16 },
+              { id: 32, word: "Turtle", pronunciation: "/torthis/", image: "🐢", pair: 16 },
+              { id: 33, word: "Penguin", pronunciation: "/ˈpenɡwɪn/", image: "🐧", pair: 17 },
+              { id: 34, word: "Penguin", pronunciation: "/ˈpenɡwɪn/", image: "🐧", pair: 17 },
+              { id: 35, word: "Horse", pronunciation: "/hors/", image: "🐴", pair: 18 },
+              { id: 36, word: "Horse", pronunciation: "/hors/", image: "🐴", pair: 18 }
+            ]
+          },
+          2: {
+            name: "Emotions & Professions",
+            requiredScore: 120,
+            cards: [
+              { id: 1, word: "Happy", pronunciation: "/ˈhapi/", image: "😊", pair: 1 },
+              { id: 2, word: "Happy", pronunciation: "/ˈhapi/", image: "😊", pair: 1 },
+              { id: 3, word: "Sad", pronunciation: "/sad/", image: "😢", pair: 2 },
+              { id: 4, word: "Sad", pronunciation: "/sad/", image: "😢", pair: 2 },
+              { id: 5, word: "Angry", pronunciation: "/ˈeŋɡri/", image: "😠", pair: 3 },
+              { id: 6, word: "Angry", pronunciation: "/ˈeŋɡri/", image: "😠", pair: 3 },
+              { id: 7, word: "Surprised", pronunciation: "/sərˈpraɪzd/", image: "😲", pair: 4 },
+              { id: 8, word: "Surprised", pronunciation: "/sərˈpraɪzd/", image: "😲", pair: 4 },
+              { id: 9, word: "Doctor", pronunciation: "/ˈdoctor/", image: "👨‍⚕️", pair: 5 },
+              { id: 10, word: "Doctor", pronunciation: "/ˈdoctor/", image: "👨‍⚕️", pair: 5 },
+              { id: 11, word: "Teacher", pronunciation: "/ˈticher/", image: "👨‍🏫", pair: 6 },
+              { id: 12, word: "Teacher", pronunciation: "/ˈticher/", image: "👨‍🏫", pair: 6 },
+              { id: 13, word: "Chef", pronunciation: "/shef/", image: "👨‍🍳", pair: 7 },
+              { id: 14, word: "Chef", pronunciation: "/shef/", image: "👨‍🍳", pair: 7 },
+              { id: 15, word: "Police", pronunciation: "/polis/", image: "👮", pair: 8 },
+              { id: 16, word: "Police", pronunciation: "/polis/", image: "👮", pair: 8 },
+              { id: 17, word: "Guitar", pronunciation: "/ɡitɑr/", image: "🎸", pair: 9 },
+              { id: 18, word: "Guitar", pronunciation: "/ɡitɑr/", image: "🎸", pair: 9 },
+              { id: 19, word: "Piano", pronunciation: "/piano/", image: "🎹", pair: 10 },
+              { id: 20, word: "Piano", pronunciation: "/piano/", image: "🎹", pair: 10 },
+              { id: 21, word: "Drum", pronunciation: "/drom/", image: "🥁", pair: 11 },
+              { id: 22, word: "Drum", pronunciation: "/drom/", image: "🥁", pair: 11 },
+              { id: 23, word: "Violin", pronunciation: "/vaiolen/", image: "🎻", pair: 12 },
+              { id: 24, word: "Violin", pronunciation: "/vaiolen/", image: "🎻", pair: 12 },
+              { id: 25, word: "Scared", pronunciation: "/skerd/", image: "😨", pair: 13 },
+              { id: 26, word: "Scared", pronunciation: "/skerd/", image: "😨", pair: 13 },
+              { id: 27, word: "Tired", pronunciation: "/ˈtaired/", image: "😴", pair: 14 },
+              { id: 28, word: "Tired", pronunciation: "/ˈtaired/", image: "😴", pair: 14 },
+              { id: 29, word: "Engineer", pronunciation: "/ingenier/", image: "👷", pair: 15 },
+              { id: 30, word: "Engineer", pronunciation: "/ingenier/", image: "👷", pair: 15 },
+              { id: 31, word: "Artist", pronunciation: "/ɑrthist/", image: "👨‍🎨", pair: 16 },
+              { id: 32, word: "Artist", pronunciation: "/arthist/", image: "👨‍🎨", pair: 16 },
+              { id: 33, word: "Trumpet", pronunciation: "/trampit/", image: "🎺", pair: 17 },
+              { id: 34, word: "Trumpet", pronunciation: "/trampit/", image: "🎺", pair: 17 },
+              { id: 35, word: "Saxophone", pronunciation: "/saksofon/", image: "🎷", pair: 18 },
+              { id: 36, word: "Saxophone", pronunciation: "/saksofon/", image: "🎷", pair: 18 }
+            ]
+          },
+          3: {
+            name: "Sentence Matching",
+            requiredScore: 250,
+            cards: [
+              { id: 1, text: "I love animals", pronunciation: "/ai lof animals/", pair: 1, lang: "en" },
+              { id: 2, text: "Amo a los animales", pair: 1, lang: "es" },
+              { id: 3, text: "The weather is nice", pronunciation: "/The weather is nice/", pair: 2, lang: "en" },
+              { id: 4, text: "El clima es agradable", pair: 2, lang: "es" },
+              { id: 5, text: "I'm learning English", pronunciation: "/I'm learning English/", pair: 3, lang: "en" },
+              { id: 6, text: "Estoy aprendiendo inglés", pair: 3, lang: "es" },
+              { id: 7, text: "She plays guitar well", pronunciation: "/She plays guitar well/", pair: 4, lang: "en" },
+              { id: 8, text: "Ella toca la guitarra bien", pair: 4, lang: "es" },
+              { id: 9, text: "My family is important", pronunciation: "/My family is important/", pair: 5, lang: "en" },
+              { id: 10, text: "Mi familia es importante", pair: 5, lang: "es" },
+              { id: 11, text: "We study every day", pronunciation: "/We study every day/", pair: 6, lang: "en" },
+              { id: 12, text: "Estudiamos todos los días", pair: 6, lang: "es" },
+              { id: 13, text: "The book is interesting", pronunciation: "/The book is interesting/", pair: 7, lang: "en" },
+              { id: 14, text: "El libro es interesante", pair: 7, lang: "es" },
+              { id: 15, text: "They are good friends", pronunciation: "/They are good friends/", pair: 8, lang: "en" },
+              { id: 16, text: "Ellos son buenos amigos", pair: 8, lang: "es" },
+              { id: 17, text: "I drink water daily", pronunciation: "/I drink water daily/", pair: 9, lang: "en" },
+              { id: 18, text: "Bebo agua diariamente", pair: 9, lang: "es" },
+              { id: 19, text: "The city is beautiful", pronunciation: "/The city is beautiful/", pair: 10, lang: "en" },
+              { id: 20, text: "La ciudad es hermosa", pair: 10, lang: "es" },
+              { id: 21, text: "He works very hard", pronunciation: "/He works very hard/", pair: 11, lang: "en" },
+              { id: 22, text: "Él trabaja muy duro", pair: 11, lang: "es" },
+              { id: 23, text: "Children play outside", pronunciation: "/Children play outside/", pair: 12, lang: "en" },
+              { id: 24, text: "Los niños juegan afuera", pair: 12, lang: "es" },
+              { id: 25, text: "The food tastes good", pronunciation: "/The food tastes good/", pair: 13, lang: "en" },
+              { id: 26, text: "La comida sabe bien", pair: 13, lang: "es" },
+              { id: 27, text: "Time flies quickly", pronunciation: "/Time flies quickly/", pair: 14, lang: "en" },
+              { id: 28, text: "El tiempo vuela rápido", pair: 14, lang: "es" },
+              { id: 29, text: "Music makes me happy", pronunciation: "/Music makes me happy/", pair: 15, lang: "en" },
+              { id: 30, text: "La música me hace feliz", pair: 15, lang: "es" },
+              { id: 31, text: "Dreams come true", pronunciation: "/Dreams come true/", pair: 16, lang: "en" },
+              { id: 32, text: "Los sueños se hacen realidad", pair: 16, lang: "es" },
+              { id: 33, text: "Practice makes perfect", pronunciation: "/Practice makes perfect/", pair: 17, lang: "en" },
+              { id: 34, text: "La práctica hace al maestro", pair: 17, lang: "es" },
+              { id: 35, text: "Life is an adventure", pronunciation: "/Life is an adventure/", pair: 18, lang: "en" },
+              { id: 36, text: "La vida es una aventura", pair: 18, lang: "es" }
+            ]
+          }
+        };
+
+        const MemoryGame = () => {
+          const [screen, setScreen] = useState('menu');
+          const [gameMode, setGameMode] = useState(null);
+          const [currentLevel, setCurrentLevel] = useState(1);
+          const [cards, setCards] = useState([]);
+          const [flippedCards, setFlippedCards] = useState([]);
+          const [matchedPairs, setMatchedPairs] = useState([]);
+          const [score, setScore] = useState(0);
+          const [streak, setStreak] = useState(0);
+          const [isChecking, setIsChecking] = useState(false);
+          const [highScores, setHighScores] = useState({ 1: 0, 2: 0, 3: 0 });
+          const [currentPlayer, setCurrentPlayer] = useState(1);
+          const [player1Score, setPlayer1Score] = useState(0);
+          const [player2Score, setPlayer2Score] = useState(0);
+          const [player1Streak, setPlayer1Streak] = useState(0);
+          const [player2Streak, setPlayer2Streak] = useState(0);
+
+          useEffect(() => {
+            const saved = localStorage.getItem('memoryGameScores');
+            if (saved) {
+              setHighScores(JSON.parse(saved));
+            }
+          }, []);
+
+          const saveHighScore = (level, newScore) => {
+            const updated = { ...highScores };
+            if (newScore > updated[level]) {
+              updated[level] = newScore;
+              setHighScores(updated);
+              localStorage.setItem('memoryGameScores', JSON.stringify(updated));
+            }
+          };
+
+          const isLevelUnlocked = (level) => {
+            if (level === 1) return true;
+            return highScores[level - 1] >= LEVEL_DATA[level].requiredScore;
+          };
+
+          const shuffleCards = (levelCards) => {
+            return [...levelCards].sort(() => Math.random() - 0.5);
+          };
+
+          const startLevel = (level, mode) => {
+            if (!isLevelUnlocked(level)) return;
+            
+            const levelCards = LEVEL_DATA[level].cards;
+            setCards(shuffleCards(levelCards));
+            setCurrentLevel(level);
+            setGameMode(mode);
+            setFlippedCards([]);
+            setMatchedPairs([]);
+            setScore(0);
+            setStreak(0);
+            setCurrentPlayer(1);
+            setPlayer1Score(0);
+            setPlayer2Score(0);
+            setPlayer1Streak(0);
+            setPlayer2Streak(0);
+            setScreen('game');
+          };
+
+          const handleCardClick = (cardId) => {
+            if (isChecking || flippedCards.length >= 2 || flippedCards.includes(cardId) || matchedPairs.includes(cardId)) {
+              return;
+            }
+
+            const newFlipped = [...flippedCards, cardId];
+            setFlippedCards(newFlipped);
+
+            if (newFlipped.length === 2) {
+              setIsChecking(true);
+              const card1 = cards.find(c => c.id === newFlipped[0]);
+              const card2 = cards.find(c => c.id === newFlipped[1]);
+
+              setTimeout(() => {
+                if (card1.pair === card2.pair) {
+                  setMatchedPairs([...matchedPairs, newFlipped[0], newFlipped[1]]);
+                  
+                  if (gameMode === 'single') {
+                    setScore(score + 10);
+                    setStreak(streak + 1);
+                  } else {
+                    if (currentPlayer === 1) {
+                      setPlayer1Score(player1Score + 10);
+                      setPlayer1Streak(player1Streak + 1);
+                    } else {
+                      setPlayer2Score(player2Score + 10);
+                      setPlayer2Streak(player2Streak + 1);
+                    }
+                  }
+                  
+                  setFlippedCards([]);
+                  setIsChecking(false);
+
+                  if (matchedPairs.length + 2 === cards.length) {
+                    setTimeout(() => {
+                      if (gameMode === 'single') {
+                        saveHighScore(currentLevel, score + 10);
+                      }
+                      
+                      if (currentLevel < 3) {
+                        setScreen('levelComplete');
+                      } else {
+                        setScreen('gameComplete');
+                      }
+                    }, 500);
+                  }
+                } else {
+                  if (gameMode === 'single') {
+                    setStreak(0);
+                  } else {
+                    if (currentPlayer === 1) {
+                      setPlayer1Streak(0);
+                      setCurrentPlayer(2);
+                    } else {
+                      setPlayer2Streak(0);
+                      setCurrentPlayer(1);
+                    }
+                  }
+                  setFlippedCards([]);
+                  setIsChecking(false);
+                }
+              }, 1000);
+            }
+          };
+
+          const isCardFlipped = (cardId) => {
+            return flippedCards.includes(cardId) || matchedPairs.includes(cardId);
+          };
+
+          if (screen === 'menu') {
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-m d w-full">
+                  <div className="text-center mb-8">
+                    <Sparkles className="w-16 h-16 mx-auto text-yellow-500 mb-4" />
+                    <h1 className="text-4xl font-bold text-gray-800 mb-2">Memory Game</h1>
+                    <p className="text-gray-600">Aprende inglés jugando</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((level) => {
+                      const unlocked = isLevelUnlocked(level);
+                      const levelData = LEVEL_DATA[level];
+                      
+                      return (
+                        <div key={level} className="relative">
+                          <div className={`${!unlocked ? 'opacity-50' : ''}`}>
+                            <div className="bg-gradient-to-r from-indigo-500 to-purple-600 text-white p-4 rounded-xl mb-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <span className="font-bold text-lg">Level {level}</span>
+                                {unlocked ? (
+                                  <Star className="w-5 h-5 text-yellow-300" />
+                                ) : (
+                                  <Lock className="w-5 h-5" />
+                                )}
+                              </div>
+                              <p className="text-sm opacity-90">{levelData.name}</p>
+                              {level > 1 && (
+                                <p className="text-xs mt-1 opacity-75">
+                                  Requiere {levelData.requiredScore} puntos en Nivel {level - 1}
+                                </p>
+                              )}
+                              {unlocked && highScores[level] > 0 && (
+                                <p className="text-xs mt-1 bg-white/20 rounded px-2 py-1 inline-block">
+                                  Best: {highScores[level]} pts
+                                </p>
+                              )}
+                            </div>
+                            
+                            {unlocked && (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => startLevel(level, 'single')}
+                                  className="flex-1 bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-all transform hover:scale-105"
+                                >
+                                  Solo
+                                </button>
+                                <button
+                                  onClick={() => startLevel(level, 'multi')}
+                                  className="flex-1 bg-green-500 text-white py-3 rounded-lg font-semibold hover:bg-green-600 transition-all transform hover:scale-105 flex items-center justify-center"
+                                >
+                                  <Users className="w-4 h-4 mr-2" />
+                                  2 Players
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {!unlocked && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <Lock className="w-12 h-12 text-gray-400" />
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          if (screen === 'levelComplete') {
+            const finalScore = gameMode === 'single' ? score : Math.max(player1Score, player2Score);
+            const winner = gameMode === 'multi' 
+              ? (player1Score > player2Score ? 'Player 1' : player2Score > player1Score ? 'Player 2' : 'Empate')
+              : null;
+
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-green-400 to-blue-500 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                  <Trophy className="w-24 h-24 mx-auto text-yellow-500 mb-4" />
+                  <h2 className="text-4xl font-bold text-gray-800 mb-4">Level Complete!</h2>
+                  
+                  {gameMode === 'single' ? (
+                    <>
+                      <p className="text-2xl text-gray-700 mb-2">Score: {score}</p>
+                      <p className="text-xl text-gray-600 mb-6">Best Streak: {streak}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-purple-600 mb-4">{winner} Wins!</p>
+                      <div className="flex justify-around mb-6">
+                        <div>
+                          <p className="text-lg font-bold text-blue-600">Player 1</p>
+                          <p className="text-xl">{player1Score} pts</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-green-600">Player 2</p>
+                          <p className="text-xl">{player2Score} pts</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="space-y-4">
+                    {isLevelUnlocked(currentLevel + 1) && currentLevel < 3 && (
+                      <button
+                        onClick={() => startLevel(currentLevel + 1, gameMode)}
+                        className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white py-4 rounded-xl font-semibold text-lg hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105 shadow-lg"
+                      >
+                        Next Level
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => startLevel(currentLevel, gameMode)}
+                      className="w-full bg-blue-500 text-white py-4 rounded-xl font-semibold text-lg hover:bg-blue-600 transition-all"
+                    >
+                      Play Again
+                    </button>
+
+                    <button
+                      onClick={() => setScreen('menu')}
+                      className="w-full bg-gray-200 text-gray-800 py-4 rounded-xl font-semibold text-lg hover:bg-gray-300 transition-all"
+                    >
+                      Main Menu
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          if (screen === 'gameComplete') {
+            const finalScore = gameMode === 'single' ? score : Math.max(player1Score, player2Score);
+            const winner = gameMode === 'multi' 
+              ? (player1Score > player2Score ? 'Player 1' : player2Score > player1Score ? 'Player 2' : 'Empate')
+              : null;
+
+            return (
+              <div className="min-h-screen bg-gradient-to-br from-yellow-400 via-orange-500 to-pink-500 flex items-center justify-center p-4">
+                <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
+                  <Trophy className="w-32 h-32 mx-auto text-yellow-500 mb-4 animate-bounce" />
+                  <h2 className="text-5xl font-bold text-gray-800 mb-4">Congratulations!</h2>
+                  <p className="text-xl text-gray-700 mb-4">You completed all levels!</p>
+                  
+                  {gameMode === 'single' ? (
+                    <>
+                      <p className="text-2xl text-gray-700 mb-2">Final Score: {score}</p>
+                      <p className="text-xl text-gray-600 mb-6">Best Streak: {streak}</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-2xl font-bold text-purple-600 mb-4">{winner} Wins!</p>
+                      <div className="flex justify-around mb-6">
+                        <div>
+                          <p className="text-lg font-bold text-blue-600">Player 1</p>
+                          <p className="text-xl">{player1Score} pts</p>
+                        </div>
+                        <div>
+                          <p className="text-lg font-bold text-green-600">Player 2</p>
+                          <p className="text-xl">{player2Score} pts</p>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <button
+                    onClick={() => setScreen('menu')}
+                    className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-xl font-semibold text-lg hover:from-purple-600 hover:to-pink-600 transition-all transform hover:scale-105 shadow-lg"
+                  >
+                    Play Again
+                  </button>
+                </div>
+              </div>
+            );
+          }
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-4">
+              <div className="max-w-6xl mx-auto">
+                <div className="bg-white rounded-2xl shadow-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <button
+                      onClick={() => setScreen('menu')}
+                      className="flex items-center text-gray-700 hover:text-gray-900 font-semibold"
+                    >
+                      <ArrowLeft className="w-5 h-5 mr-2" />
+                      Menu
+                    </button>
+
+                    {gameMode === 'single' ? (
+                      <div className="flex items-center space-x-6">
+                        <div className="flex items-center">
+                          <Flame className={`w-6 h-6 mr-2 ${streak > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+                          <span className="font-bold text-lg">{streak}</span>
+                        </div>
+
+                        <div className="flex items-center">
+                          <Star className="w-6 h-6 mr-2 text-yellow-500" />
+                          <span className="font-bold text-lg">{score}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-4">
+                        <div className={`flex items-center px-3 py-2 rounded-lg ${currentPlayer === 1 ? 'bg-blue-100 border-2 border-blue-500' : 'bg-gray-100'}`}>
+                          <div className="text-center">
+                            <p className="text-xs font-semibold text-blue-600">Player 1</p>
+                            <div className="flex items-center space-x-2">
+                              <Flame className={`w-4 h-4 ${player1Streak > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+                              <span className="text-sm font-bold">{player1Streak}</span>
+                              <Star className="w-4 h-4 text-yellow-500" />
+                              <span className="text-sm font-bold">{player1Score}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className={`flex items-center px-3 py-2 rounded-lg ${currentPlayer === 2 ? 'bg-green-100 border-2 border-green-500' : 'bg-gray-100'}`}>
+                          <div className="text-center">
+                            <p className="text-xs font-semibold text-green-600">Player 2</p>
+                            <div className="flex items-center space-x-2">
+                              <Flame className={`w-4 h-4 ${player2Streak > 0 ? 'text-orange-500' : 'text-gray-400'}`} />
+                              <span className="text-sm font-bold">{player2Streak}</span>
+                              <Star className="w-4 h-4 text-yellow-500" />
+                              <span className="text-sm font-bold">{player2Score}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="text-center mb-6">
+                  <h2 className="text-3xl font-bold text-white drop-shadow-lg">
+                    Level {currentLevel}: {LEVEL_DATA[currentLevel].name}
+                  </h2>
+                  {gameMode === 'multi' && (
+                    <p className="text-xl font-semibold text-white mt-2 drop-shadow">
+                      Turn: <span className={currentPlayer === 1 ? 'text-blue-200' : 'text-green-200'}>
+                        Player {currentPlayer}
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-6 gap-2 sm:gap-3">
+                  {cards.map((card) => (
+                    <div
+                      key={card.id}
+                      onClick={() => handleCardClick(card.id)}
+                      className={`aspect-square cursor-pointer transition-all duration-300 transform hover:scale-105 ${
+                        isChecking && flippedCards.includes(card.id) ? '' : 'hover:shadow-xl'
+                      }`}
+                      style={{ perspective: '1000px' }}
+                    >
+                      <div
+                        className={`relative w-full h-full transition-transform duration-500 ${
+                          isCardFlipped(card.id) ? 'rotate-y-180' : ''
+                        }`}
+                        style={{ transformStyle: 'preserve-3d' }}
+                      >
+                        <div
+                          className="absolute w-full h-full bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg shadow-lg flex items-center justify-center"
+                          style={{ backfaceVisibility: 'hidden' }}
+                        >
+                          <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+
+                        <div
+                          className="absolute w-full h-full bg-white rounded-lg shadow-lg flex flex-col items-center justify-center p-2 rotate-y-180"
+                          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                        >
+                          {currentLevel < 3 ? (
+                            <>
+                              <div className="text-4xl mb-1">{card.image}</div>
+                              <div className="text-center">
+                                <p className="font-bold text-xs sm:text-sm text-gray-800">{card.word}</p>
+                                <p className="text-xs text-gray-600">{card.pronunciation}</p>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="text-center px-1">
+                              <p className={`font-semibold text-xs sm:text-sm ${card.lang === 'en' ? 'text-blue-700' : 'text-gray-800'}`}>
+                                {card.text}
+                              </p>
+                              {card.pronunciation && (
+                                <p className="text-xs text-gray-600 mt-1">{card.pronunciation}</p>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 bg-white rounded-2xl shadow-lg p-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="font-semibold text-gray-700">Progress</span>
+                    <span className="font-bold text-gray-800">{matchedPairs.length / 2} / 18</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="bg-gradient-to-r from-green-400 to-blue-500 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${(matchedPairs.length / cards.length) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<MemoryGame />, document.getElementById('root'));
+    </script>
+
+    <!-- Service Worker para PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('data:text/javascript;base64,c2VsZi5hZGRFdmVudExpc3RlbmVyKCdpbnN0YWxsJywgZnVuY3Rpb24oZXZlbnQpIHsKICBzZWxmLnNraXBXYWl0aW5nKCk7Cn0pOwpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2FjdGl2YXRlJywgZnVuY3Rpb24oZXZlbnQpIHsKICByZXR1cm4gc2VsZi5jbGllbnRzLmNsYWltKCk7Cn0pOwpzZWxmLmFkZEV2ZW50TGlzdGVuZXIoJ2ZldGNoJywgZnVuY3Rpb24oZXZlbnQpIHsKICBldmVudC5yZXNwb25kV2l0aChjYWNoZXMubWF0Y2goZXZlbnQucmVxdWVzdCkudGhlbihmdW5jdGlvbihyZXNwb25zZSkgewogICAgcmV0dXJuIHJlc3BvbnNlIHx8IGZldGNoKGV2ZW50LnJlcXVlc3QpOwogIH0pKTsKfSk7')
+                    .then(() => console.log('Service Worker registered'))
+                    .catch(err => console.log('Service Worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>
+
+
